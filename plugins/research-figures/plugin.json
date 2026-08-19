@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "research-figures",
+  "version": "1.0.0",
+  "description": "Conventions for research figures — file generated plots into numbered version folders with a manifest and rolled-up index so every figure traces back to the run that produced it.",
+  "author": { "name": "janlukacas" },
+  "homepage": "https://github.com/JanCas/claude-skills",
+  "repository": "https://github.com/JanCas/claude-skills",
+  "keywords": ["research", "figures", "versioning", "provenance", "reproducibility"]
+}

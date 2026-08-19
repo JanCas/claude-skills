@@ -1,9 +1,14 @@
 # DRL_skills
 
-A personal Claude Code **plugin marketplace**, published at
+A personal **agent skills** repo, published at
 **https://github.com/JanCas/claude-skills**. Skills live here once and get
 installed into individual projects as plugins, instead of being copied into each
 project's `.claude/skills/`.
+
+Each plugin ships in two formats at once: **Agent Plugins 1.0.0** (the
+vendor-neutral standard, read by ChatGPT, Codex, Cursor, Copilot, VS Code and
+Kiro) and **Claude Code**'s own plugin + marketplace format. The skills
+themselves are shared, not duplicated.
 
 Nothing needs to be cloned to use it — Claude Code fetches the marketplace from
 GitHub. If you are not the author, start with [For collaborators](#for-collaborators).
@@ -14,7 +19,8 @@ Cloning is only for [adding or editing skills](#working-on-this-repo).
 ## For collaborators
 
 No clone, no GitHub account, no access request — the repo is public. Two commands,
-run from anywhere:
+run from anywhere. *(Using something other than Claude Code? See
+[other agent clients](#using-it-in-other-agent-clients).)*
 
 ```bash
 claude plugin marketplace add https://github.com/JanCas/claude-skills --scope user
@@ -158,6 +164,30 @@ claude plugin marketplace remove DRL_skills --scope project
 
 ---
 
+## Using it in other agent clients
+
+`plugins/research-figures/` is a valid **Agent Plugins 1.0.0** package — the
+vendor-neutral standard published in August 2026 by Anthropic, OpenAI, AWS,
+Cursor, GitHub/Microsoft and Vercel. Clients that read it include ChatGPT,
+Codex, Cursor, GitHub Copilot, VS Code and Kiro.
+
+Point the client at **`plugins/research-figures/`** — the plugin root — or zip
+that directory. Not the repo root: the standard has no marketplace concept, so
+`marketplace.json` is ignored outside Claude Code and each plugin installs on its
+own.
+
+The skill needs no conversion. `SKILL.md` with `name`/`description` frontmatter
+alongside `assets/` and `references/` is exactly what the standard specifies, so
+the same directory serves both formats.
+
+**Two caveats, both unverified here.** The package is checked against the
+published JSON Schema, but has not been installed into a non-Claude client from
+this repo. And ChatGPT Skills were limited to Business, Enterprise, Healthcare
+and Edu workspaces as of July 2026 — not Free, Plus, or Pro. Check the client's
+own docs for its install step, which varies (upload vs. repo reference).
+
+---
+
 ## Working on this repo
 
 Only needed to add or change skills. Clone it:
@@ -171,18 +201,47 @@ git clone git@github.com:JanCas/claude-skills.git ~/code/claude-skills
 ```text
 claude-skills/
 ├── .claude-plugin/
-│   └── marketplace.json          <- the marketplace manifest (lists plugins)
+│   └── marketplace.json          <- Claude Code marketplace (lists plugins)
 ├── README.md
+├── scripts/
+│   ├── validate.py               <- checks both formats, and that they agree
+│   └── plugin.schema.1.0.0.json  <- vendored Agent Plugins schema
 └── plugins/
-    └── research-figures/         <- one themed bundle
+    └── research-figures/         <- one themed bundle = one Agent Plugin
+        ├── plugin.json           <- Agent Plugins 1.0.0 manifest
         ├── .claude-plugin/
-        │   └── plugin.json
-        └── skills/
+        │   └── plugin.json       <- Claude Code manifest
+        └── skills/               <- shared by both formats
             └── figure-versioning/
                 ├── SKILL.md
                 ├── assets/
                 └── references/
 ```
+
+### Two manifests per plugin
+
+Every plugin states its metadata twice, deliberately:
+
+| File | Read by | Why it exists |
+| --- | --- | --- |
+| `plugin.json` (plugin root) | ChatGPT, Codex, Cursor, Copilot, VS Code, Kiro | The portable Agent Plugins 1.0.0 standard |
+| `.claude-plugin/plugin.json` | Claude Code | Claude Code 2.1.227 does **not** read the root manifest — it fails with *"Expected .claude-plugin/marketplace.json or .claude-plugin/plugin.json"* |
+
+This is what the standard's own migration guide prescribes: add the root manifest
+without deleting the platform files. Delete `.claude-plugin/` and Claude Code
+stops seeing the plugin; delete `plugin.json` and every other client does.
+
+`skills/` is shared — both formats discover skills in the same place, so skill
+directories are written once and never duplicated.
+
+Note that `plugin.json` permits exactly ten top-level fields and rejects anything
+else (`additionalProperties: false`), so Claude's `category` cannot live there —
+it stays in the marketplace entry. `name` must also match the schema's pattern:
+lowercase alphanumerics, dots and hyphens, starting and ending alphanumeric.
+
+The cost of two manifests is that `name`, `version` and `description` appear in
+three places counting the marketplace entry. That is what `scripts/validate.py`
+is for.
 
 ### Adding a skill
 
@@ -231,12 +290,16 @@ pure data-analysis project wants figure conventions but not solver conventions.
 
 ### Adding a new plugin
 
-1. Create `plugins/<name>/.claude-plugin/plugin.json` with `name`, `version`,
-   `description`, `author`.
-2. Add a matching entry to the `plugins` array in
+1. Create `plugins/<name>/plugin.json` — the Agent Plugins manifest. `$schema`
+   and `name` are the only required fields; `version`, `description`, `author`,
+   `homepage`, `repository`, `license`, `keywords` and `extensions` are the rest
+   of the permitted set.
+2. Create `plugins/<name>/.claude-plugin/plugin.json` with the **same** `name`,
+   `version` and `description`.
+3. Add a matching entry to the `plugins` array in
    `.claude-plugin/marketplace.json` — `name`, `description`, `source`
    (`./plugins/<name>`), `category`.
-3. Validate, commit, push.
+4. Run `python3 scripts/validate.py`, then commit and push.
 
 ### This repo is public
 
@@ -247,18 +310,27 @@ before pushing, and replace it with placeholders that keep the lesson intact.
 
 ### Validating
 
-Run from the repo root. Both manifests should pass, including `--strict`:
+One command checks everything, from the repo root:
 
 ```bash
-claude plugin validate . --strict
+python3 scripts/validate.py
 ```
 
-```bash
-claude plugin validate ./plugins/research-figures --strict
-```
+For every plugin it verifies:
 
-`--strict` treats warnings (unrecognized fields, missing metadata) as errors.
-Use it — the non-strict run tolerates things the runtime merely shrugs at.
+- `plugin.json` against the vendored Agent Plugins 1.0.0 JSON Schema
+  (`scripts/plugin.schema.1.0.0.json` — pinned, and the schema's `$schema` value
+  is a `const` naming its own version, so the vendored copy cannot silently go
+  stale)
+- that `name`, `version` and `description` agree across both manifests and the
+  marketplace entry
+- that the marketplace `source` points where it claims
+- that every skill has a `SKILL.md` whose frontmatter carries `name` and
+  `description`, with `name` matching its directory
+- `claude plugin validate --strict` on the repo and on each plugin
+
+It needs `jsonschema` (`pip install jsonschema`); without it the schema check is
+skipped with a note rather than silently passing.
 
 ### Testing a skill before pushing
 
