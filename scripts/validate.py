@@ -92,7 +92,7 @@ for pdir in plugin_dirs:
 
     # -------------------------------------------------------------- agreement
     if portable and claude:
-        for field in ("name", "version", "description"):
+        for field in ("name", "version", "description", "license"):
             a, b = portable.get(field), claude.get(field)
             if a != b:
                 err(

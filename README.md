@@ -202,6 +202,7 @@ git clone git@github.com:JanCas/claude-skills.git ~/code/claude-skills
 claude-skills/
 ├── .claude-plugin/
 │   └── marketplace.json          <- Claude Code marketplace (lists plugins)
+├── LICENSE                       <- MIT
 ├── README.md
 ├── scripts/
 │   ├── validate.py               <- checks both formats, and that they agree
@@ -322,8 +323,8 @@ For every plugin it verifies:
   (`scripts/plugin.schema.1.0.0.json` — pinned, and the schema's `$schema` value
   is a `const` naming its own version, so the vendored copy cannot silently go
   stale)
-- that `name`, `version` and `description` agree across both manifests and the
-  marketplace entry
+- that `name`, `version`, `description` and `license` agree across both
+  manifests, and that the description matches the marketplace entry
 - that the marketplace `source` points where it claims
 - that every skill has a `SKILL.md` whose frontmatter carries `name` and
   `description`, with `name` matching its directory
@@ -364,3 +365,14 @@ commit or push needed. Remove it when done:
 ```bash
 claude plugin marketplace remove DRL_skills --scope local
 ```
+
+---
+
+## License
+
+[MIT](LICENSE) — © 2026 Jan Luka Cas.
+
+Use, copy, modify and redistribute freely; the only condition is that the
+copyright notice travels with it. Both plugin manifests declare `"license":
+"MIT"`, so clients that surface licence metadata pick it up without reading the
+file.

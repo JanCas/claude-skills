@@ -2,5 +2,8 @@
   "name": "research-figures",
   "version": "1.0.0",
   "description": "Conventions for research figures — file generated plots into numbered version folders with a manifest and rolled-up index so every figure traces back to the run that produced it.",
-  "author": { "name": "janlukacas" }
+  "author": {
+    "name": "janlukacas"
+  },
+  "license": "MIT"
 }
