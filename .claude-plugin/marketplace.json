@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "DRL_skills",
+  "description": "Personal research + modeling skills",
+  "owner": { "name": "janlukacas" },
+  "plugins": [
+    {
+      "name": "research-figures",
+      "description": "Conventions for research figures — file generated plots into numbered version folders with a manifest and rolled-up index so every figure traces back to the run that produced it.",
+      "source": "./plugins/research-figures",
+      "category": "productivity"
+    }
+  ]
+}
