@@ -6,8 +6,65 @@ installed into individual projects as plugins, instead of being copied into each
 project's `.claude/skills/`.
 
 Nothing needs to be cloned to use it — Claude Code fetches the marketplace from
-GitHub. See [Using it](#using-it-in-a-project). Cloning is only for
-[adding or editing skills](#working-on-this-repo).
+GitHub. If you are not the author, start with [For collaborators](#for-collaborators).
+Cloning is only for [adding or editing skills](#working-on-this-repo).
+
+---
+
+## For collaborators
+
+No clone, no GitHub account, no access request — the repo is public. Two commands,
+run from anywhere:
+
+```bash
+claude plugin marketplace add https://github.com/JanCas/claude-skills --scope user
+```
+
+```bash
+claude plugin install research-figures@DRL_skills --scope user
+```
+
+Restart Claude Code (or start a new session), then confirm:
+
+```bash
+claude plugin list
+```
+
+You should see `research-figures@DRL_skills`, version 1.0.0, enabled.
+
+**Why the full HTTPS URL and not the `JanCas/claude-skills` shorthand.** The
+shorthand picks its transport from your own `gh` config. If
+`gh config get git_protocol --host github.com` returns `ssh` and you have not
+added an SSH key to GitHub, the clone fails. The HTTPS URL needs no auth at all
+for a public repo. The outcome is otherwise identical — the two just record
+different `source` blocks in settings (`git`/`url` versus `github`/`repo`).
+
+**Why `--scope user`.** It installs into your own `~/.claude/settings.json`, so
+the skill follows you into every project and imposes nothing on anyone else.
+Reach for `--scope project` only if the convention should bind one shared repo —
+that writes into *that repo's* `.claude/settings.json` and applies to everyone
+who clones it. The scope table further down has the details.
+
+### Using it
+
+There is nothing to invoke. The skill fires on its own during figure work — after
+a plotting script runs, when a results directory has loose PNGs that need
+organizing, or when someone asks which run produced a given figure. You can also
+just ask for it directly: *"set up figure versioning in `results/`"*.
+
+It costs about 240 tokens of always-on context; the full body (~2.7k) loads only
+when it actually triggers.
+
+### Getting updates
+
+New and changed skills arrive when you refresh the marketplace:
+
+```bash
+claude plugin marketplace update DRL_skills
+```
+
+Restart afterwards. The marketplace serves whatever has been pushed to GitHub, so
+if something looks missing, it may not be pushed yet.
 
 ## Plugins
 
@@ -19,8 +76,9 @@ GitHub. See [Using it](#using-it-in-a-project). Cloning is only for
 
 ## Using it in a project
 
-Run these **from inside the target project's root**. No clone of this repo
-required, on any machine.
+The reference version of the above, for binding the skills to a specific repo
+rather than to yourself. Run these **from inside the target project's root**. No
+clone of this repo required, on any machine.
 
 ### 1. Register the marketplace
 
@@ -73,9 +131,11 @@ path. Both keys are safe and intended to commit.
 | `project` | `<project>/.claude/settings.json` | anyone who clones that project |
 | `local` | `<project>/.claude/settings.local.json` | this checkout only, not committed |
 
-Use `project` when the skills should follow the repo — that is the usual case,
-and it is what the commands above do. Use `user` for something you want
-everywhere regardless of project.
+Pick by what should own the decision. `user` when *you* want a skill available
+everywhere you work — the right default for your own machine. `project` when the
+*repo* should carry the convention, so everyone who clones it gets the same
+skills; that is what the commands in this section do. `local` for a one-off you
+do not want committed.
 
 ### Picking up changes
 
