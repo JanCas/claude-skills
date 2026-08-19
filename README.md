@@ -1,10 +1,112 @@
 # DRL_skills
 
-Published at **https://github.com/JanCas/claude-skills** (public).
-
-A personal Claude Code **plugin marketplace**. Skills live here once and get
+A personal Claude Code **plugin marketplace**, published at
+**https://github.com/JanCas/claude-skills**. Skills live here once and get
 installed into individual projects as plugins, instead of being copied into each
 project's `.claude/skills/`.
+
+Nothing needs to be cloned to use it — Claude Code fetches the marketplace from
+GitHub. See [Using it](#using-it-in-a-project). Cloning is only for
+[adding or editing skills](#working-on-this-repo).
+
+## Plugins
+
+| Plugin | Skills | What it covers |
+| --- | --- | --- |
+| `research-figures` | `figure-versioning` | Filing generated plots into numbered version folders with a `MANIFEST.md` and a rolled-up `INDEX.md`, so every figure traces back to the run that produced it. |
+
+---
+
+## Using it in a project
+
+Run these **from inside the target project's root**. No clone of this repo
+required, on any machine.
+
+### 1. Register the marketplace
+
+```bash
+claude plugin marketplace add JanCas/claude-skills --scope project
+```
+
+### 2. Install the plugin
+
+```bash
+claude plugin install research-figures@DRL_skills --scope project
+```
+
+The `@DRL_skills` suffix pins which marketplace it comes from. Restart Claude
+Code (or start a new session) for the skill to load.
+
+### 3. What that writes into the project's `.claude/settings.json`
+
+Both commands edit the same file, and both keys are meant to be committed:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "DRL_skills": {
+      "source": {
+        "source": "github",
+        "repo": "JanCas/claude-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "research-figures@DRL_skills": true
+  }
+}
+```
+
+- `extraKnownMarketplaces` — where the project looks for plugins. Written by
+  `marketplace add`.
+- `enabledPlugins` — which plugins are on. Written by `install`.
+
+A `github` source is portable: anyone who clones that project gets a working
+marketplace entry, because it resolves against GitHub rather than a local disk
+path. Both keys are safe and intended to commit.
+
+### About `--scope`
+
+| Scope | Written to | Applies to |
+| --- | --- | --- |
+| `user` (default) | `~/.claude/settings.json` | you, in every project |
+| `project` | `<project>/.claude/settings.json` | anyone who clones that project |
+| `local` | `<project>/.claude/settings.local.json` | this checkout only, not committed |
+
+Use `project` when the skills should follow the repo — that is the usual case,
+and it is what the commands above do. Use `user` for something you want
+everywhere regardless of project.
+
+### Picking up changes
+
+The GitHub source serves **whatever has been pushed**, and the marketplace is
+cached locally. After pushing a new or edited skill, pull it into a project with:
+
+```bash
+claude plugin marketplace update DRL_skills
+```
+
+### Undoing
+
+```bash
+claude plugin uninstall research-figures@DRL_skills --scope project
+```
+
+```bash
+claude plugin marketplace remove DRL_skills --scope project
+```
+
+---
+
+## Working on this repo
+
+Only needed to add or change skills. Clone it:
+
+```bash
+git clone git@github.com:JanCas/claude-skills.git ~/code/claude-skills
+```
+
+### Layout
 
 ```text
 claude-skills/
@@ -22,13 +124,7 @@ claude-skills/
                 └── references/
 ```
 
-## Plugins
-
-| Plugin | Skills | What it covers |
-| --- | --- | --- |
-| `research-figures` | `figure-versioning` | Filing generated plots into numbered version folders with a `MANIFEST.md` and a rolled-up `INDEX.md`, so every figure traces back to the run that produced it. |
-
-## How to add a skill
+### Adding a skill
 
 **Default: add it to an existing bundle.** Drop the skill directory into that
 plugin's `skills/` folder. Nothing else needs to change — plugins pick up every
@@ -39,7 +135,8 @@ them.
 plugins/research-figures/skills/<new-skill-name>/SKILL.md
 ```
 
-Bump the plugin's `version` in its `plugin.json` when you do.
+Bump the plugin's `version` in its `plugin.json` when you do, then commit and
+push — the marketplace serves what is on GitHub, not what is on disk.
 
 **Only create a new plugin for a genuinely separate concern.** The test is not
 "is this a different topic?" — it is **"would I ever want this switched on while
@@ -79,9 +176,16 @@ pure data-analysis project wants figure conventions but not solver conventions.
 2. Add a matching entry to the `plugins` array in
    `.claude-plugin/marketplace.json` — `name`, `description`, `source`
    (`./plugins/<name>`), `category`.
-3. Validate (see below) and commit.
+3. Validate, commit, push.
 
-## Validating
+### This repo is public
+
+Anything committed here is published. Skills often carry real numbers in their
+examples — check `references/` and any worked examples for unpublished data
+before pushing, and replace it with placeholders that keep the lesson intact.
+`figure-versioning`'s worked example is genericized for exactly this reason.
+
+### Validating
 
 Run from the repo root. Both manifests should pass, including `--strict`:
 
@@ -96,45 +200,18 @@ claude plugin validate ./plugins/research-figures --strict
 `--strict` treats warnings (unrecognized fields, missing metadata) as errors.
 Use it — the non-strict run tolerates things the runtime merely shrugs at.
 
-## Installing into a project
+### Testing a skill before pushing
 
-Run these **from inside the target project's root**, not from this repo.
-
-### 1. Register this marketplace
-
-From the local path — picks up edits immediately, no push needed:
-
-```bash
-claude plugin marketplace add ~/code/claude-skills --scope project
-```
-
-Or from GitHub — resolves on any machine, and for anyone who clones the project:
+To try an edit without pushing, register the working copy by path in a scratch
+project. This writes a machine-local `directory` source, so use it only in a
+throwaway project or at `--scope local` — never in a `.claude/settings.json` you
+intend to commit:
 
 ```bash
-claude plugin marketplace add JanCas/claude-skills --scope project
+claude plugin marketplace add ~/code/claude-skills --scope local
 ```
 
-Use the local path while iterating on a skill; use the GitHub form for anything
-whose `.claude/settings.json` gets committed and shared. The two write different
-`source` blocks (see below).
-
-`--scope` takes `user` (default, applies to you everywhere), `project`
-(committed with the repo, applies to anyone who clones it), or `local`
-(this checkout only, not committed). Use `project` when the project's skills
-should follow the repo; use `user` for something you want everywhere.
-
-### 2. Install the plugin
-
-```bash
-claude plugin install research-figures@DRL_skills --scope project
-```
-
-The `@DRL_skills` suffix pins which marketplace it comes from. Restart Claude
-Code (or start a new session) for the skill to load.
-
-### 3. What that writes into the project's `.claude/settings.json`
-
-Both commands edit the same file, and both keys are meant to be committed:
+It writes an absolute path, which will not resolve for anyone else:
 
 ```json
 {
@@ -145,51 +222,13 @@ Both commands edit the same file, and both keys are meant to be committed:
         "path": "/Users/janlukacas/code/claude-skills"
       }
     }
-  },
-  "enabledPlugins": {
-    "research-figures@DRL_skills": true
   }
 }
 ```
 
-- `extraKnownMarketplaces` — where the project looks for plugins. Written by
-  `marketplace add`.
-- `enabledPlugins` — which plugins are on. Written by `install`.
-
-**Note the absolute path.** That is what the *local path* form writes, and a
-`directory` source is machine-local — a collaborator cloning the project gets a
-marketplace entry pointing at a path that does not exist for them. The GitHub
-form writes a portable source instead:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "DRL_skills": {
-      "source": { "source": "github", "repo": "JanCas/claude-skills" }
-    }
-  }
-}
-```
-
-Rule of thumb: local path for a project only you touch, `JanCas/claude-skills`
-for anything you commit and share. The GitHub form serves whatever is pushed, so
-a skill edited locally will not appear until it is committed and pushed.
-
-### Undoing
+Unlike the GitHub source, this one reflects the working tree immediately — no
+commit or push needed. Remove it when done:
 
 ```bash
-claude plugin uninstall research-figures@DRL_skills --scope project
-```
-
-```bash
-claude plugin marketplace remove DRL_skills --scope project
-```
-
-### After editing a skill in this repo
-
-Changes are picked up from the local path, but the marketplace metadata is
-cached. If a new skill or a changed description does not show up:
-
-```bash
-claude plugin marketplace update DRL_skills
+claude plugin marketplace remove DRL_skills --scope local
 ```
