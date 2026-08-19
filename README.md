@@ -1,5 +1,7 @@
 # DRL_skills
 
+Published at **https://github.com/JanCas/claude-skills** (public).
+
 A personal Claude Code **plugin marketplace**. Skills live here once and get
 installed into individual projects as plugins, instead of being copied into each
 project's `.claude/skills/`.
@@ -98,11 +100,23 @@ Use it — the non-strict run tolerates things the runtime merely shrugs at.
 
 Run these **from inside the target project's root**, not from this repo.
 
-### 1. Register this marketplace from its local path
+### 1. Register this marketplace
+
+From the local path — picks up edits immediately, no push needed:
 
 ```bash
 claude plugin marketplace add ~/code/claude-skills --scope project
 ```
+
+Or from GitHub — resolves on any machine, and for anyone who clones the project:
+
+```bash
+claude plugin marketplace add JanCas/claude-skills --scope project
+```
+
+Use the local path while iterating on a skill; use the GitHub form for anything
+whose `.claude/settings.json` gets committed and shared. The two write different
+`source` blocks (see below).
 
 `--scope` takes `user` (default, applies to you everywhere), `project`
 (committed with the repo, applies to anyone who clones it), or `local`
@@ -142,12 +156,24 @@ Both commands edit the same file, and both keys are meant to be committed:
   `marketplace add`.
 - `enabledPlugins` — which plugins are on. Written by `install`.
 
-**Note the absolute path.** A `directory` source is machine-local, so a
-collaborator cloning the project gets a marketplace entry pointing at a path that
-does not exist on their machine. That is fine while this repo is personal and
-lives only here. If it ever needs to be shared, push it to GitHub and re-add the
-marketplace by repo (`owner/repo`) instead of by path, so the source resolves for
-everyone.
+**Note the absolute path.** That is what the *local path* form writes, and a
+`directory` source is machine-local — a collaborator cloning the project gets a
+marketplace entry pointing at a path that does not exist for them. The GitHub
+form writes a portable source instead:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "DRL_skills": {
+      "source": { "source": "github", "repo": "JanCas/claude-skills" }
+    }
+  }
+}
+```
+
+Rule of thumb: local path for a project only you touch, `JanCas/claude-skills`
+for anything you commit and share. The GitHub form serves whatever is pushed, so
+a skill edited locally will not appear until it is committed and pushed.
 
 ### Undoing
 
